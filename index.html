@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Scientific Calculator</title>
+<style>
+  :root{
+    --bg:#0f1724;
+    --panel:#0b1a2b;
+    --accent:#4ade80;
+    --muted:#9aa6b2;
+    --btn:#1f2b3a;
+    --btn-press:#384a5f;
+    --text:#e6eef6;
+    --danger:#ff6b6b;
+  }
+  body{margin:0; background:linear-gradient(180deg,#07202e,#0b1a2b); font-family:Inter,Arial;}
+  .app{max-width:520px; margin:20px auto; padding:16px; background:var(--panel); border-radius:16px; box-shadow:0 6px 18px rgba(0,0,0,0.6);}
+  .display{background:#101c2e; color:var(--text); padding:14px; border-radius:10px; text-align:right; min-height:80px; word-break:break-all;}
+  .expression{color:var(--muted); font-size:16px; min-height:18px;}
+  .output{font-size:28px; font-weight:600;}
+  .pad{display:grid; grid-template-columns: repeat(5,1fr); gap:10px; margin-top:16px;}
+  button{background:var(--btn); color:var(--text); border:0; padding:14px; font-size:17px; border-radius:10px; transition:0.1s;}
+  button:active{background:var(--btn-press);}
+  .accent{background:var(--accent); color:#051226; font-weight:600;}
+  .danger{background:var(--danger); color:#fff;}
+  .wide{grid-column:span 2;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="display">
+    <div class="expression" id="expr"></div>
+    <div class="output" id="out">0</div>
+  </div>
+  <div class="pad">
+    <button data-func="clear" class="danger">C</button>
+    <button data-func="back">⌫</button>
+    <button data-func="deg">DEG</button>
+    <button data-op="(">(</button>
+    <button data-op=")">)</button>
+
+    <button data-func="sin">sin</button>
+    <button data-func="cos">cos</button>
+    <button data-func="tan">tan</button>
+    <button data-func="sqrt">√</button>
+    <button data-func="pow2">x²</button>
+
+    <button data-func="log">log</button>
+    <button data-func="ln">ln</button>
+    <button data-func="fact">n!</button>
+    <button data-func="pow3">x³</button>
+    <button data-func="pow">x^y</button>
+
+    <button data-num="7">7</button>
+    <button data-num="8">8</button>
+    <button data-num="9">9</button>
+    <button data-op="/">÷</button>
+    <button data-op="%">%</button>
+
+    <button data-num="4">4</button>
+    <button data-num="5">5</button>
+    <button data-num="6">6</button>
+    <button data-op="*">×</button>
+    <button data-func="pi">π</button>
+
+    <button data-num="1">1</button>
+    <button data-num="2">2</button>
+    <button data-num="3">3</button>
+    <button data-op="-">−</button>
+    <button data-func="e">e</button>
+
+    <button data-num="0" class="wide">0</button>
+    <button data-op=".">.</button>
+    <button data-op="+">+</button>
+    <button data-func="equals" class="accent">=</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const exprEl=document.getElementById("expr"), outEl=document.getElementById("out");
+  let expr="", degreeMode=true;
+
+  function render(){ exprEl.textContent=expr; if(!expr) outEl.textContent="0"; }
+  function append(v){ expr+=v; render(); }
+
+  function factorial(n){ if(n<0) return NaN; let res=1; for(let i=2;i<=n;i++) res*=i; return res; }
+
+  function evaluate(){
+    try{
+      let jsExpr=expr;
+      jsExpr=jsExpr.replace(/÷/g,"/").replace(/×/g,"*").replace(/−/g,"-");
+      jsExpr=jsExpr.replace(/π/g,"Math.PI").replace(/e/g,"Math.E");
+      jsExpr=jsExpr.replace(/sin\(/g, degreeMode?"(Math.sin((Math.PI/180)*":"Math.sin(");
+      jsExpr=jsExpr.replace(/cos\(/g, degreeMode?"(Math.cos((Math.PI/180)*":"Math.cos(");
+      jsExpr=jsExpr.replace(/tan\(/g, degreeMode?"(Math.tan((Math.PI/180)*":"Math.tan(");
+      jsExpr=jsExpr.replace(/log\(/g,"Math.log10(");
+      jsExpr=jsExpr.replace(/ln\(/g,"Math.log(");
+      jsExpr=jsExpr.replace(/√\(/g,"Math.sqrt(");
+      jsExpr=jsExpr.replace(/(\d+)!/g,"factorial($1)");
+
+      let val=Function("factorial","return "+jsExpr)(factorial);
+      outEl.textContent=(val===undefined||isNaN(val))?"Error":val;
+    }catch(e){ outEl.textContent="Error"; }
+  }
+
+  document.querySelectorAll("button").forEach(btn=>{
+    const num=btn.dataset.num,op=btn.dataset.op,func=btn.dataset.func;
+    if(num) btn.onclick=()=>append(num);
+    if(op) btn.onclick=()=>append(op);
+    if(func){
+      btn.onclick=()=>{
+        if(func==="clear"){ expr=""; outEl.textContent="0"; }
+        else if(func==="back"){ expr=expr.slice(0,-1); }
+        else if(func==="equals"){ evaluate(); return; }
+        else if(func==="pi"){ append("π"); }
+        else if(func==="e"){ append("e"); }
+        else if(func==="sqrt"){ append("√("); }
+        else if(func==="pow2"){ append("**2"); }
+        else if(func==="pow3"){ append("**3"); }
+        else if(func==="pow"){ append("**"); }
+        else if(func==="log"){ append("log("); }
+        else if(func==="ln"){ append("ln("); }
+        else if(func==="sin"){ append("sin("); }
+        else if(func==="cos"){ append("cos("); }
+        else if(func==="tan"){ append("tan("); }
+        else if(func==="fact"){ append("!"); }
+        else if(func==="deg"){ degreeMode=!degreeMode; btn.textContent=degreeMode?"DEG":"RAD"; }
+        render();
+      }
+    }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
